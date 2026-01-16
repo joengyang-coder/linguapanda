@@ -1,245 +1,213 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LinguaPanda - Safe Build</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinguaPanda - 自然万物完整版</title>
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
     <style>
-        :root { --panda-green: #66bb6a; --gold: #ffca28; --bg: #f1f8e9; }
+        :root { --panda-green: #4CAF50; --bg-cream: #FFFDF5; --accent-orange: #FF5722; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg-cream); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         
-        body { 
-            margin: 0; background: var(--bg); font-family: 'Rounded Mplus 1c', sans-serif; 
-            overflow: hidden; touch-action: none; display: flex; flex-direction: column; align-items: center; 
-        }
+        /* 导航栏 */
+        #header { width: 100%; padding: 15px 30px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; position: sticky; top: 0; z-index: 100; }
+        #logo { font-size: 20px; font-weight: bold; color: #333; }
+        #progress { font-weight: bold; color: var(--panda-green); background: #f0fdf0; padding: 5px 15px; border-radius: 20px; }
 
-        /* Progress & Stars */
-        #progress-bar { display: flex; gap: 12px; margin-top: 15px; }
-        .star-slot { font-size: 38px; color: #ddd; transition: all 0.4s ease; }
-        .star-active { color: var(--gold) !important; transform: scale(1.2); }
+        /* 主容器 */
+        #main-container { display: flex; flex-direction: column; align-items: center; padding: 20px; width: 100%; max-width: 800px; }
 
-        /* Mascot - ENLARGED */
-        .panda-container { position: relative; width: 180px; height: 180px; margin: 10px 0; }
-        .panda-img { width: 100%; height: auto; transition: transform 0.3s; }
-        .jump { animation: jump 0.6s ease; }
-        @keyframes jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-40px); } }
+        /* 学习区域布局 */
+        #learning-box { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; width: 100%; margin-top: 20px; }
+
+        /* 左侧：描摹板 */
+        #writer-card { background: white; border-radius: 25px; padding: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); border: 4px solid #f0f0f0; transition: border-color 0.3s; }
+        #writer-card.active { border-color: var(--panda-green); }
+        #char-header { text-align: center; margin-bottom: 15px; }
+        #pinyin-text { font-size: 32px; color: var(--accent-orange); font-weight: bold; letter-spacing: 2px; }
+
+        /* 右侧：熊猫互动 */
+        #panda-zone { width: 300px; display: flex; flex-direction: column; align-items: center; }
+        #panda-avatar { width: 180px; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.1)); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #speech-bubble { background: white; border-radius: 20px; padding: 18px; margin-top: 20px; border: 3px solid var(--panda-green); position: relative; font-size: 16px; line-height: 1.5; color: #444; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        #speech-bubble::after { content: ''; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 15px solid var(--panda-green); }
+
+        /* 测试区 */
+        #quiz-container { display: none; width: 100%; margin-top: 30px; text-align: center; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #quiz-q { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 15px; }
+        .quiz-option { background: white; border: 2px solid #eee; border-radius: 12px; padding: 15px 30px; cursor: pointer; margin: 8px; font-size: 24px; transition: 0.2s; min-width: 80px; }
+        .quiz-option:hover { border-color: var(--panda-green); transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.1); }
         
-        .msg-bubble { 
-            background: white; padding: 12px 25px; border-radius: 25px; margin: 10px; 
-            font-weight: bold; color: #2e7d32; box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            border: 2px solid #e0e0e0; min-width: 220px; text-align: center; font-size: 1.2rem;
-        }
-
-        /* Canvas Stage */
-        #canvas-box { 
-            position: relative; width: 310px; height: 310px; background: white; 
-            border: 10px solid var(--panda-green); border-radius: 40px; 
-            box-shadow: 0 12px 30px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;
-        }
-        .guide { position: absolute; font-size: 200px; color: #f2f2f2; z-index: 1; user-select: none; pointer-events: none; }
-        canvas { position: absolute; z-index: 2; top: 0; left: 0; border-radius: 30px; touch-action: none; }
-
-        /* UI Controls */
-        .btn-parent { position: absolute; top: 15px; right: 15px; background: #fff; border: 2px solid #ccc; border-radius: 50%; width: 45px; height: 45px; color: #999; font-weight: bold; cursor: pointer; z-index: 2000; }
-        .btn-reset { margin-top: 15px; padding: 12px 35px; border-radius: 30px; border: none; background: var(--panda-green); color: white; font-size: 18px; box-shadow: 0 5px 0 #388e3c; cursor: pointer; }
-
-        /* Overlays */
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; display: none; align-items: center; justify-content: center; }
-        .box { background: white; padding: 25px; border-radius: 25px; text-align: center; width: 85%; max-width: 320px; }
-        textarea { width: 90%; height: 60px; margin: 10px 0; border-radius: 10px; border: 1px solid #ccc; padding: 10px; font-size: 18px; }
-        select { padding: 10px; width: 100%; border-radius: 10px; margin-bottom: 15px; font-size: 16px; }
+        /* 底部控制 */
+        #controls { margin-top: 40px; }
+        .btn-reset { background: #eee; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; color: #666; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <button class="btn-parent" onclick="openGate()">P</button>
+<div id="header">
+    <div id="logo">🐼 LinguaPanda</div>
+    <div id="progress">自然万物: <span id="cur-idx">1</span> / 31</div>
+</div>
 
-    <div id="progress-bar">
-        <div class="star-slot" id="slot-1">☆</div>
-        <div class="star-slot" id="slot-2">☆</div>
-        <div class="star-slot" id="slot-3">☆</div>
-    </div>
+<div id="main-container">
+    <div id="learning-box">
+        <div id="writer-card">
+            <div id="char-header"><span id="pinyin-text">rì</span></div>
+            <div id="character-target"></div>
+        </div>
 
-    <div class="panda-container">
-        <img id="panda" class="panda-img" src="mascot-welcome.png">
-    </div>
-
-    <div class="msg-bubble" id="msg">Trace the line! 加油!</div>
-
-    <div id="canvas-box">
-        <div class="guide" id="char-guide">一</div>
-        <canvas id="paintCanvas" width="310" height="310"></canvas>
-    </div>
-
-    <button class="btn-reset" onclick="resetCanvas()">Start Over</button>
-
-    <div id="gate" class="overlay">
-        <div class="box">
-            <h3>Parents Only</h3>
-            <p id="math-q"></p>
-            <input type="number" id="gate-ans" style="width:80px; font-size:24px; text-align:center;"><br><br>
-            <button onclick="checkGate()" style="padding:10px 20px; background:var(--panda-green); color:white; border:none; border-radius:10px;">Verify</button>
-            <button onclick="closeUI('gate')" style="background:none; border:none; color:#999; margin-top:10px;">Cancel</button>
+        <div id="panda-zone">
+            <img id="panda-avatar" src="https://img.icons8.com/color/180/panda.png" alt="Panda">
+            <div id="speech-bubble">你好！我是熊猫老师，点击汉字开始描摹吧！</div>
         </div>
     </div>
 
-    <div id="settings-panel" class="overlay">
-        <div class="box">
-            <h3>Settings</h3>
-            <p style="font-size:12px; color:666;">Difficulty:</p>
-            <select id="diff-select">
-                <option value="45">Easy (Thick)</option>
-                <option value="24" selected>Standard</option>
-                <option value="12">Hard (Thin)</option>
-            </select>
-            <p style="font-size:12px; color:666;">Words (e.g. 一,二,三):</p>
-            <textarea id="word-input"></textarea>
-            <button onclick="saveSettings()" style="padding:12px 25px; background:var(--panda-green); color:white; border:none; border-radius:10px; font-weight:bold; width:100%;">Save & Restart</button>
-            <button onclick="clearAllData()" style="color:red; font-size:11px; background:none; border:none; margin-top:15px; cursor:pointer;">Emergency Factory Reset</button>
-        </div>
+    <div id="quiz-container">
+        <div id="quiz-q">哪个是这个字？</div>
+        <div id="quiz-btns"></div>
     </div>
+
+    <div id="controls">
+        <button class="btn-reset" onclick="resetCurrentStroke()">重写本字</button>
+    </div>
+</div>
 
 <script>
-    const canvas = document.getElementById('paintCanvas');
-    const ctx = canvas.getContext('2d');
-    const msg = document.getElementById('msg');
-    const panda = document.getElementById('panda');
-    const charGuide = document.getElementById('char-guide');
-    
-    let drawing = false;
-    let stars = 0;
-    let words = ["一", "二", "三"];
+    // 完整的 31 个自然关卡数据库
+    const natureLevels = [
+        { char: "日", pinyin: "rì", speech: "Rì！太阳公公出来啦，照得全身暖洋洋！", quiz: "哪个字是‘日’？", options: ["日", "目", "口"], correct: "日" },
+        { char: "月", pinyin: "yuè", speech: "Yuè！月亮小船摇呀摇，小朋友们快睡觉。", quiz: "哪个字是‘月’？", options: ["月", "用", "且"], correct: "月" },
+        { char: "山", pinyin: "shān", speech: "Shān！大山高高的，我们要一起去爬山吗？", quiz: "哪个字是‘山’？", options: ["山", "出", "凶"], correct: "山" },
+        { char: "水", pinyin: "shuǐ", speech: "Shuǐ！清清的水洗洗脸，凉凉的真舒服！", quiz: "哪个是‘水’？", options: ["水", "冰", "永"], correct: "水" },
+        { char: "火", pinyin: "huǒ", speech: "Huǒ！火堆红红的，取暖别伸手哦！", quiz: "哪个是‘火’？", options: ["火", "灯", "灭"], correct: "火" },
+        { char: "云", pinyin: "yún", speech: "Yún！白云白白的，像不像软软的棉花糖？", quiz: "哪个是‘云’？", options: ["云", "去", "会"], correct: "云" },
+        { char: "雨", pinyin: "yǔ", speech: "Yǔ！下雨啦，小花小草喝水喝得真开心！", quiz: "哪个是‘雨’？", options: ["雨", "两", "雪"], correct: "雨" },
+        { char: "石", pinyin: "shí", speech: "Shí！石头硬邦邦，可以用来盖房子。", quiz: "哪个是‘石’？", options: ["石", "右", "后"], correct: "石" },
+        { char: "田", pinyin: "tián", speech: "Tián！田里长满了香喷喷的米饭！", quiz: "哪个是‘田’？", options: ["田", "口", "由"], correct: "田" },
+        { char: "土", pinyin: "tǔ", speech: "Tǔ！泥土里住着好朋友，小竹笋也在这里长。", quiz: "哪个是‘土’？", options: ["土", "士", "干"], correct: "土" },
+        { char: "禾", pinyin: "hé", speech: "Hé！禾苗长高了，秋天就有好吃的啦。", quiz: "哪个是‘禾’？", options: ["禾", "木", "本"], correct: "禾" },
+        { char: "木", pinyin: "mù", speech: "Mù！大树就像一把伞，帮我们遮太阳。", quiz: "哪个是‘木’？", options: ["木", "本", "术"], correct: "木" },
+        { char: "竹", pinyin: "zhú", speech: "Zhú！我最喜欢翠绿的竹子，它是我的好朋友。", quiz: "哪个是‘竹’？", options: ["竹", "笔", "简"], correct: "竹" },
+        { char: "电", pinyin: "diàn", speech: "Diàn！闪电亮亮，雷声响响，快躲进屋里。", quiz: "哪个是‘电’？", options: ["电", "田", "甲"], correct: "电" },
+        { char: "风", pinyin: "fēng", speech: "Fēng！大风呼呼叫，吹得我都要飞起来啦！", quiz: "哪个是‘风’？", options: ["风", "凤", "冈"], correct: "风" },
+        { char: "天", pinyin: "tiān", speech: "Tiān！蓝蓝的天空真大，飞着好多小鸟。", quiz: "哪个是‘天’？", options: ["天", "夭", "大"], correct: "天" },
+        { char: "地", pinyin: "dì", speech: "Dì！大地厚厚的，承载着万物生长。", quiz: "哪个是‘地’？", options: ["地", "他", "池"], correct: "地" },
+        { char: "星", pinyin: "xīng", speech: "Xīng！星星眨眼睛，是在和我们打招呼吗？", quiz: "哪个是‘星’？", options: ["星", "里", "早"], correct: "星" },
+        { char: "光", pinyin: "guāng", speech: "Guāng！有光的地方就亮晶晶，不怕天黑。", quiz: "哪个是‘光’？", options: ["光", "元", "先"], correct: "光" },
+        { char: "雪", pinyin: "xuě", speech: "Xuě！下雪啦，我们一起去堆雪人吧！", quiz: "哪个是‘雪’？", options: ["雪", "雷", "露"], correct: "雪" },
+        { char: "冰", pinyin: "bīng", speech: "Bīng！冰面滑滑的，走路要小心哦！", quiz: "哪个是‘冰’？", options: ["冰", "水", "决"], correct: "冰" },
+        { char: "沙", pinyin: "shā", speech: "Shā！小小的沙子堆成山，真好玩。", quiz: "哪个是‘沙’？", options: ["沙", "河", "洗"], correct: "沙" },
+        { char: "河", pinyin: "hé", speech: "Hé！河水流向远方，带走了我的小船。", quiz: "哪个是‘河’？", options: ["河", "何", "渴"], correct: "河" },
+        { char: "海", pinyin: "hǎi", speech: "Hǎi！大海蓝蓝的，里面住着好多小鱼。", quiz: "哪个是‘海’？", options: ["海", "每", "悔"], correct: "海" },
+        { char: "草", pinyin: "cǎo", speech: "Cǎo！绿绿的小草软绵绵，躺着真舒服。", quiz: "哪个是‘草’？", options: ["草", "早", "苦"], correct: "草" },
+        { char: "花", pinyin: "huā", speech: "Huā！花儿红红的，闻起来香喷喷。", quiz: "哪个是‘花’？", options: ["花", "华", "化"], correct: "花" },
+        { char: "树", pinyin: "shù", speech: "Shù！树木长成森林，是我们大家的家。", quiz: "哪个是‘树’？", options: ["树", "村", "对"], correct: "树" },
+        { char: "林", pinyin: "lín", speech: "Lín！双木成林，森林里空气真清新。", quiz: "哪个是‘林’？", options: ["林", "森", "木"], correct: "林" },
+        { char: "果", pinyin: "guǒ", speech: "Guǒ！秋天结果子，甜甜的果子真好吃。", quiz: "哪个是‘果’？", options: ["果", "里", "课"], correct: "果" },
+        { char: "叶", pinyin: "yè", speech: "Yè！叶子变黄了，冬天快要来了。", quiz: "哪个是‘叶’？", options: ["叶", "吐", "口"], correct: "叶" },
+        { char: "苗", pinyin: "miáo", speech: "Miáo！小苗快快长，长大变成大植物。", quiz: "哪个是‘苗’？", options: ["苗", "亩", "猫"], correct: "苗" }
+    ];
+
     let currentIdx = 0;
-    let audioUnlocked = false;
+    let writer;
 
-    // Load Data
-    try {
-        if(localStorage.getItem('pandaWords')) {
-            const storedWords = localStorage.getItem('pandaWords').split(',').filter(s => s.trim() !== "");
-            if(storedWords.length > 0) words = storedWords;
-        }
-        document.getElementById('word-input').value = words.join(',');
+    // 初始化关卡
+    function startLevel(index) {
+        const data = natureLevels[index];
         
-        let brushWidth = localStorage.getItem('pandaDiff') || 24;
-        document.getElementById('diff-select').value = brushWidth;
-        ctx.lineWidth = brushWidth;
-    } catch(e) { console.error(e); }
-
-    ctx.strokeStyle = '#FFD700'; 
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    charGuide.innerText = words[0];
-
-    function startDraw(e) { 
-        drawing = true; 
-        // Unlock audio on first touch
-        if(!audioUnlocked) {
-            const u = new SpeechSynthesisUtterance("");
-            window.speechSynthesis.speak(u);
-            audioUnlocked = true;
-        }
-        draw(e); 
-    }
-    
-    function stopDraw() { 
-        if(drawing) celebrate(); 
-        drawing = false; ctx.beginPath(); 
-    }
-
-    function draw(e) {
-        if(!drawing) return;
-        e.preventDefault();
-        const t = e.touches ? e.touches[0] : e;
-        const r = canvas.getBoundingClientRect();
-        ctx.lineTo(t.clientX - r.left, t.clientY - r.top);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(t.clientX - r.left, t.clientY - r.top);
-    }
-
-    function celebrate() {
-        panda.src = "mascot-goodjob.png";
-        msg.innerText = "Great! 太棒了!";
-        panda.classList.add('jump');
-        speak(words[currentIdx]); // Triggers voice
+        // 更新 UI 文本
+        document.getElementById("pinyin-text").innerText = data.pinyin;
+        document.getElementById("cur-idx").innerText = index + 1;
+        document.getElementById("speech-bubble").innerText = `跟我一起写“${data.char}”字吧！`;
+        document.getElementById("quiz-container").style.display = "none";
+        document.getElementById("character-target").innerHTML = "";
         
-        stars++;
-        if(stars <= 3) {
-            const s = document.getElementById(`slot-${stars}`);
-            if(s) { s.innerText = "★"; s.classList.add('star-active'); }
-        }
+        // 重置熊猫动作
+        const panda = document.getElementById("panda-avatar");
+        panda.style.transform = "scale(1) rotate(0deg)";
 
-        setTimeout(() => {
-            panda.classList.remove('jump');
-            if(stars >= 3) levelUp();
-            else { panda.src = "mascot-welcome.png"; msg.innerText = "Keep going! 加油!"; }
-        }, 2000);
-    }
+        // 初始化描摹插件 (Hanzi Writer)
+        writer = HanziWriter.create('character-target', data.char, {
+            width: 280,
+            height: 280,
+            padding: 10,
+            showOutline: true,
+            strokeColor: '#4CAF50',
+            outlineColor: '#DDD',
+            drawingColor: '#333'
+        });
 
-    function levelUp() {
-        currentIdx = (currentIdx + 1) % words.length;
-        charGuide.innerText = words[currentIdx];
-        resetStars();
-        resetCanvas();
-        panda.src = "mascot-welcome.png";
-    }
-
-    function resetStars() {
-        stars = 0;
-        document.querySelectorAll('.star-slot').forEach(s => {
-            s.innerText = "☆"; s.classList.remove('star-active');
+        // 开启测试模式
+        writer.quiz({
+            onComplete: function() {
+                handleTraceSuccess();
+            }
         });
     }
 
-    function resetCanvas() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        msg.innerText = "Trace the line! 加油!";
+    // 描摹完成逻辑
+    function handleTraceSuccess() {
+        const data = natureLevels[currentIdx];
+        const bubble = document.getElementById("speech-bubble");
+        const panda = document.getElementById("panda-avatar");
+
+        // 熊猫给出反馈
+        bubble.innerText = data.speech;
+        panda.style.transform = "scale(1.2) rotate(10deg)";
+
+        // 延迟展示选择题
+        setTimeout(() => {
+            showQuiz(data);
+        }, 1800);
     }
 
-    function speak(t) {
-        const u = new SpeechSynthesisUtterance(t);
-        u.lang = 'zh-CN'; 
-        u.rate = 0.7; 
-        u.volume = 1.0; // Ensure max volume
-        window.speechSynthesis.speak(u);
+    // 展示小测试
+    function showQuiz(data) {
+        const container = document.getElementById("quiz-container");
+        const btnBox = document.getElementById("quiz-btns");
+        
+        container.style.display = "block";
+        document.getElementById("quiz-q").innerText = data.quiz;
+        btnBox.innerHTML = "";
+
+        data.options.forEach(opt => {
+            const btn = document.createElement("button");
+            btn.className = "quiz-option";
+            btn.innerText = opt;
+            btn.onclick = () => verifyChoice(opt, data.correct);
+            btnBox.appendChild(btn);
+        });
     }
 
-    // Parent UI
-    let gAns = 0;
-    function openGate() {
-        closeUI('settings-panel');
-        const a = Math.floor(Math.random()*10), b = Math.floor(Math.random()*10);
-        gAns = a + b;
-        document.getElementById('math-q').innerText = `${a} + ${b} = ?`;
-        document.getElementById('gate').style.display = 'flex';
-    }
-    function checkGate() {
-        if(parseInt(document.getElementById('gate-ans').value) === gAns) {
-            closeUI('gate');
-            document.getElementById('settings-panel').style.display = 'flex';
-        } else { alert("Incorrect!"); openGate(); }
-    }
-    function saveSettings() {
-        const input = document.getElementById('word-input').value;
-        const diff = document.getElementById('diff-select').value;
-        const clean = input.split(',').map(s => s.trim()).filter(s => s !== "");
-        if(clean.length > 0) {
-            localStorage.setItem('pandaWords', clean.join(','));
-            localStorage.setItem('pandaDiff', diff);
-            location.reload();
+    // 验证答案并切关
+    function verifyChoice(choice, correct) {
+        if (choice === correct) {
+            currentIdx++;
+            if (currentIdx < natureLevels.length) {
+                startLevel(currentIdx);
+            } else {
+                alert("🎉 太棒了！你已经完成了‘自然万物’的所有学习！");
+                currentIdx = 0; // 循环
+                startLevel(0);
+            }
+        } else {
+            document.getElementById("speech-bubble").innerText = "哎呀，不对哦，再仔细找找看？";
+            const panda = document.getElementById("panda-avatar");
+            panda.style.transform = "translateX(10px) rotate(-5deg)";
+            setTimeout(() => panda.style.transform = "scale(1)", 500);
         }
     }
-    function clearAllData() {
-        if(confirm("Factory Reset?")) { localStorage.clear(); location.reload(); }
-    }
-    function closeUI(id) { document.getElementById(id).style.display = 'none'; }
 
-    canvas.addEventListener('touchstart', startDraw);
-    canvas.addEventListener('touchend', stopDraw);
-    canvas.addEventListener('touchmove', draw);
-    canvas.addEventListener('mousedown', startDraw);
-    canvas.addEventListener('mouseup', stopDraw);
-    canvas.addEventListener('mousemove', draw);
+    function resetCurrentStroke() {
+        startLevel(currentIdx);
+    }
+
+    // 页面加载完成后自动开始
+    window.onload = () => startLevel(0);
 </script>
+
 </body>
 </html>
 
