@@ -11,7 +11,10 @@
         /* Progress Bar */
         #progress-bar { display: flex; gap: 15px; margin-top: 20px; }
         .star-slot { font-size: 35px; color: #ccc; transition: transform 0.3s; }
-        .star-active { color: var(--gold); transform: scale(1.2); }
+        .star-active { color: var(--gold); transform: scale(1.2); }.star-active {
+    color: var(--gold) !important; /* This uses the gold color you defined in :root */
+    transform: scale(1.2);        /* Makes the star pop out slightly */
+}
 
         /* Panda Area */
         .panda-container { position: relative; width: 100px; height: 100px; margin-top: 10px; }
@@ -36,7 +39,7 @@
     </style>
 </head>
 <body>
-
+<button class="btn-parent" onclick="OpenGate(); celebrateTask();">P</button>
     <button class="btn-parent" onclick="openGate()">P</button>
 
     <div id="progress-bar">
@@ -149,10 +152,70 @@
 
     canvas.addEventListener('touchstart', startDraw);
     canvas.addEventListener('touchend', stopDraw);
+    function stopDraw() {
+    drawing = false;
+    // If the tracing is successful, call the celebration!
+    celebrateTask(); 
+}
     canvas.addEventListener('touchmove', draw);
     canvas.addEventListener('mousedown', startDraw);
     canvas.addEventListener('mouseup', stopDraw);
     canvas.addEventListener('mousemove', draw);
+</script>
+    <script>
+    function celebrateTask() {
+    // 1. Change the panda to 'goodjob' pose
+    panda.src = "mascot-goodjob.png";
+    msgBubble.innerText = "太棒了! (Tài bàng le!)";
+    panda.classList.add('jump');
+
+    // 2. Increment the star count
+    stars++;
+    
+    // 3. Find the star slot and make it 'active'
+    if (stars <= 3) {
+        const currentStar = document.getElementById(slot-${stars});
+        if (currentStar) {
+            currentStar.classList.add('star-active');
+        }
+    }
+
+    // Reset panda after 3 seconds
+    setTimeout(() => {
+        panda.src = "mascot-welcome.png";
+        msgBubble.innerText = "Trace the line! 加油!";
+        panda.classList.remove('jump');
+        
+        // If they get 3 stars, maybe show a final "Level Complete" alert!
+        if (stars === 3) {
+            alert("Congratulations! Level Complete! 🏆");
+        }
+    }, 3000);
+}
+  const panda = document.getElementById('panda');
+  const msgBubble = document.getElementById('msg');
+
+  // Function to celebrate success!
+  function celebrateTask() {
+    // 1. Change the panda image to your 'goodjob' pose
+    panda.src = "mascot-goodjob.png";
+    
+    // 2. Change the message in the bubble
+    msgBubble.innerText = "太棒了! (Tài bàng le!) - Great job!";
+    
+    // 3. Add a little 'jump' animation (using the CSS you already have)
+    panda.classList.add('jump');
+    
+    // Reset back to normal after 3 seconds
+    setTimeout(() => {
+      panda.src = "mascot-welcome.png";
+      msgBubble.innerText = "Trace the line! 加油!";
+      panda.classList.remove('jump');
+    }, 3000);
+  }
+
+  // To test this, you can call celebrateTask() 
+  // when your 'canvas' logic detects a completed line!
 </script>
 </body>
 </html>
