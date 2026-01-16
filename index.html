@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LinguaPanda - Premium Learning</title>
+    <title>LinguaPanda - Final Build</title>
     <style>
         :root { --panda-green: #66bb6a; --gold: #ffca28; --sky: #29b6f6; --bg: #f1f8e9; }
         
@@ -29,7 +29,7 @@
             border: 2px solid #e0e0e0; min-width: 220px; text-align: center;
         }
 
-        /* Drawing Stage */
+        /* Learning Stage */
         #canvas-box { 
             position: relative; width: 310px; height: 310px; background: white; 
             border: 10px solid var(--panda-green); border-radius: 40px; 
@@ -45,13 +45,11 @@
         .btn-parent { position: absolute; top: 15px; right: 15px; background: #fff; border: 2px solid #ccc; border-radius: 50%; width: 45px; height: 45px; color: #999; font-weight: bold; cursor: pointer; }
         .btn-reset { margin-top: 15px; padding: 12px 35px; border-radius: 30px; border: none; background: var(--panda-green); color: white; font-size: 18px; box-shadow: 0 5px 0 #388e3c; cursor: pointer; }
 
-        /* Overlays & Dashboards */
+        /* Overlays */
         #gate, #settings-panel, #gift-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: none; align-items: center; justify-content: center; }
         .box { background: white; padding: 30px; border-radius: 25px; text-align: center; width: 85%; max-width: 320px; }
         .color-option { width: 35px; height: 35px; border-radius: 50%; display: inline-block; margin: 10px; cursor: pointer; border: 3px solid #eee; }
         .selected { border-color: #333 !important; }
-        
-        #dashboard { margin-top: 15px; padding: 10px; background: #f9f9f9; border-radius: 10px; font-size: 14px; color: #666; }
     </style>
 </head>
 <body>
@@ -99,13 +97,11 @@
     <div id="settings-panel">
         <div class="box">
             <h3>Settings & Progress</h3>
-            <div id="dashboard">Progress: <span id="dash-prog">0</span> characters finished</div>
             <p>Brush Color:</p>
             <div class="color-option" style="background:var(--gold)" onclick="setBrushColor('#FFD700', this)"></div>
             <div class="color-option" style="background:var(--panda-green)" onclick="setBrushColor('#66bb6a', this)"></div>
             <div class="color-option" style="background:var(--sky)" onclick="setBrushColor('#29b6f6', this)"></div>
-            
-            <p>Edit Word List:</p>
+            <p>Edit Word List (comma separated):</p>
             <textarea id="word-input" style="width:90%; height:40px; border-radius:8px; border:1px solid #ccc; padding:8px;">一,二,三,口,人</textarea>
             <br><br>
             <button onclick="saveSettings()" style="padding:10px 25px; background:var(--panda-green); color:white; border:none; border-radius:10px;">Save Changes</button>
@@ -125,6 +121,7 @@
     let words = ["一", "二", "三", "口", "人"];
     let currentIdx = parseInt(localStorage.getItem('pandaProgress')) || 0;
     let brushColor = localStorage.getItem('pandaBrush') || '#FFD700';
+    let idleTimer;
 
     // Initialization
     if(localStorage.getItem('pandaWords')) {
@@ -132,17 +129,23 @@
         document.getElementById('word-input').value = words.join(',');
     }
     charGuide.innerText = words[currentIdx];
-    document.getElementById('dash-prog').innerText = currentIdx;
 
     ctx.strokeStyle = brushColor; 
     ctx.lineWidth = 24;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    function startDraw(e) { drawing = true; draw(e); }
+    function startDraw(e) { 
+        drawing = true; 
+        clearTimeout(idleTimer);
+        draw(e); 
+    }
+    
     function stopDraw() { 
         if(drawing) celebrate(); 
-        drawing = false; ctx.beginPath(); 
+        drawing = false; 
+        ctx.beginPath(); 
+        startIdleTimer();
     }
 
     function draw(e) {
@@ -183,11 +186,10 @@
         stars = 0;
         currentIdx++;
         localStorage.setItem('pandaProgress', currentIdx);
-        document.getElementById('dash-prog').innerText = currentIdx;
 
         if(currentIdx < words.length) {
             panda.src = "mascot-success.png";
-            msg.innerText = "New Character! 🎋";
+            msg.innerText = "Next one! 🎋";
             setTimeout(() => {
                 charGuide.innerText = words[currentIdx];
                 resetStars();
@@ -198,6 +200,14 @@
             panda.src = "mascot-success.png";
             document.getElementById('gift-overlay').style.display = 'flex';
         }
+    }
+
+    function startIdleTimer() {
+        idleTimer = setTimeout(() => {
+            panda.src = "mascot-hint.png";
+            msg.innerText = "Let's try together! 加油!";
+            speak("加油!");
+        }, 12000);
     }
 
     function setBrushColor(color, el) {
@@ -227,7 +237,7 @@
 
     function speak(t) {
         let u = new SpeechSynthesisUtterance(t);
-        u.lang = 'zh-CN'; u.rate = 0.7;
+        u.lang = 'zh-CN'; u.rate = 0.7; u.pitch = 1.2;
         window.speechSynthesis.speak(u);
     }
 
@@ -257,7 +267,10 @@
     canvas.addEventListener('mousedown', startDraw);
     canvas.addEventListener('mouseup', stopDraw);
     canvas.addEventListener('mousemove', draw);
+    
+    startIdleTimer();
 </script>
 </body>
 </html>
+
 
